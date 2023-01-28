@@ -29,7 +29,7 @@ class GfgFriendquotesSpider(scrapy.Spider):
             km = km.replace('KM ','')
             ano = quote.xpath('.//div/div/div/section/div/div/div/div/div/section[2]/div/div/div/div/div/div[2]/div/h2/a/text()').extract_first()
             valor = quote.xpath('.//div/div/div/section/div/div/div/div/div/section[2]/div/div/div/div/div/div[4]/div/h2/a/text()').extract_first()
-            valor = valor.replace('R$ ')
+            valor = valor.replace('R$ ','')
 
             yield {
                 'Text': title,
