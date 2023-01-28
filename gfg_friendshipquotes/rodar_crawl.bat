@@ -1,0 +1,1 @@
+scrapy crawl gfg_friendquotes -o friendshipquotes.csv

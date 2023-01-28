@@ -26,8 +26,10 @@ class GfgFriendquotesSpider(scrapy.Spider):
         for quote in quotes:
             title = quote.xpath('.//div[@id="titulousados"]//h2//a/text()').extract_first()
             km = quote.xpath('.//div/div/div/section/div/div/div/div/div/section[1]/div/div/div/div/div/div/div/h2/text()').extract_first()
+            km = km.replace('KM ','')
             ano = quote.xpath('.//div/div/div/section/div/div/div/div/div/section[2]/div/div/div/div/div/div[2]/div/h2/a/text()').extract_first()
             valor = quote.xpath('.//div/div/div/section/div/div/div/div/div/section[2]/div/div/div/div/div/div[4]/div/h2/a/text()').extract_first()
+            valor = valor.replace('R$ ')
 
             yield {
                 'Text': title,
