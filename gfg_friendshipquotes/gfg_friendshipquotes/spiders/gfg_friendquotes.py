@@ -31,12 +31,13 @@ class GfgFriendquotesSpider(scrapy.Spider):
             valor = quote.xpath('.//div/div/div/section/div/div/div/div/div/section[2]/div/div/div/div/div/div[4]/div/h2/a/text()').extract_first()
             valor = valor.replace('R$ ','')
 
-            yield {
-                'Text': title,
-                'KM' : km,
-                'Ano' : ano,
-                'Valor' : valor,
-            }
+            if int(km) < 50000:
+                yield {
+                    'Text': title,
+                    'KM' : km,
+                    'Ano' : ano,
+                    'Valor' : valor,
+                }
 
         next_page = response.xpath('//*[contains(text(),"facetwp-page next") and contains(text(),"data-page=")]').get()
 
