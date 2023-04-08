@@ -1,1 +1,1 @@
-scrapy crawl gfg_friendquotes -o friendshipquotes.csv
+scrapy crawl gfg_cars -o cars.csv
