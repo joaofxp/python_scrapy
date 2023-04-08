@@ -5,7 +5,7 @@ import re
 
 carStores = [
     {
-          "titulo":"promenac"
+          "storeName":"promenac"
         , "domain":"promenacseminovos.com.br"
         , "urlCrawl":"https://promenacseminovos.com.br/estoque"
         , "urlNext":"https://promenacseminovos.com.br/estoque?_paged="
@@ -31,6 +31,7 @@ def carregarDadosLojaCarro():
     carStore['valorXPath'] = carStores[carIndex]["dadosCarro"]["valorXPath"]
     carStore['buttonNextPage'] = carStores[carIndex]['buttonNextPage']
     carStore['urlNext'] = carStores[carIndex]['urlNext']
+    carStore['storeName'] = carStores[carIndex]['storeName']
     return carStore
 
 class GfgCarsSpider(scrapy.Spider):
@@ -55,20 +56,24 @@ class GfgCarsSpider(scrapy.Spider):
             ano = car.xpath(carStore['anoXPath']).extract_first()
             valor = car.xpath(carStore['valorXPath']).extract_first()
             valor = valor.replace('R$ ','')
+            storeName = carStore['storeName']
 
-            if int(km) < 50000:
+            if int(km) < 60000:
                 yield {
                     'Text': title,
                     'KM' : km,
                     'Ano' : ano,
                     'Valor' : valor,
+                    'Concessionaria': storeName,
                 }
 
         next_page = response.xpath(carStore['buttonNextPage']).get()
 
         if next_page is not None:
-            next_page = re.search('class=..facetwp-page next...data-page=..[0-9]+..',next_page).group(0)
-            next_page = re.search('[0-9]+',next_page).group(0)
+            # tratativa para promenac, pois carregam o botao em uma tag script e o XPath não consegue extrair de dentro de um string de uma vez só
+            if(carStore['storeName'] == 'promenac'):
+                next_page = re.search('class=..facetwp-page next...data-page=..[0-9]+..',next_page).group(0)
+                next_page = re.search('[0-9]+',next_page).group(0)
 
             next_page = carStore['urlNext'] + next_page
 
