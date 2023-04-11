@@ -13,7 +13,7 @@ carStores = [
         , "dadosCarro" : {
               "listaCarrosXPath":'//*[contains(@class,"vehicle-tile ng-star-inserted")]'
             , "tituloCarroXPath":'.//p[@class="inventory-title"]/text()'
-            , "kmXPath":None
+            , "kmXPath":'substring-after(.//p[@class="inventory-subtitle ng-star-inserted"]/text(),"| ")'
             , "anoXPath":'.//p[@class="inventory-title"]/text()'
             , "valorXPath":'.//p[@class="sub-price"]/text()'
         }
@@ -28,7 +28,7 @@ carStores = [
         , "dadosCarro" : {
               "listaCarrosXPath":'//*[contains(@class, "list_semi") and contains(@class, "col-xs-12 list_semi2")]//div[@class="list_semi" and (contains(.,"Itajaí") or contains(.,"Balneário Camboriú"))]'
             , "tituloCarroXPath":'.//div[@class="titl_list_semi text_azul2"]//a/text()'
-            , "kmXPath":None
+            , "kmXPath":''
             , "anoXPath":'.//div[3]//a//span/text()'
             , "valorXPath":'.//div[@class="valr_list_semi font_bold"]//a/text()[2]'
         }
@@ -51,10 +51,9 @@ carStores = [
 ]
 
 carIndex = 0
+start_urls_global = []
 
 def carregarDadosLojaCarro():
-    global carIndex
-
     carStore = {}
     carStore['listaCarrosXPath'] = carStores[carIndex]["dadosCarro"]["listaCarrosXPath"]
     carStore['tituloCarroXPath'] = carStores[carIndex]["dadosCarro"]["tituloCarroXPath"]
@@ -63,39 +62,41 @@ def carregarDadosLojaCarro():
     carStore['valorXPath'] = carStores[carIndex]["dadosCarro"]["valorXPath"]
     carStore['buttonNextPage'] = carStores[carIndex]['buttonNextPage'] if carStores[carIndex]['buttonNextPage'] else None
     carStore['urlNext'] = carStores[carIndex]['urlNext']
+    carStore['urlCrawl'] = carStores[carIndex]['urlCrawl']
     carStore['storeName'] = carStores[carIndex]['storeName']
 
     return carStore
 
 def temProximaLoja():
-    global carIndex
-
     if len(carStores) > carIndex + 1:
-        carIndex += 1
         return True
     else:
         return False
+
 class GfgCarsSpider(scrapy.Spider):
     name = 'gfg_cars'
     allowed_domains = []
     start_urls = []
+    global start_urls_global
 
     for carStore in carStores:
         allowed_domains.append(carStore['domain'])
         start_urls.append(carStore['urlCrawl'])
+        start_urls_global.append(carStore['urlCrawl'])
 
     def parse(self, response):
         carsArray = {}
+        global carIndex
 
         carStore = carregarDadosLojaCarro()
         carsArray = response.xpath(carStore['listaCarrosXPath'])
 
         for car in carsArray:
             title = car.xpath(carStore['tituloCarroXPath']).extract_first().strip()
-            title = re.sub('[0-9]+','',title)
+            title = re.sub('^[0-9]+','',title).lstrip()
 
             km = car.xpath(carStore['kmXPath']).extract_first() if carStore['kmXPath'] else ''
-            km = km.replace('KM ','').strip()
+            km = re.sub('[ KkMm]+','',km)
 
             ano = car.xpath(carStore['anoXPath']).extract_first()
             ano = re.findall(r'\d+', ano)
@@ -105,21 +106,20 @@ class GfgCarsSpider(scrapy.Spider):
 
             storeName = carStore['storeName']
 
-            km = None if km == '' else km
-
-            if km is not None and int(km) < 60000:
+            if km == '':
                 yield {
                     'Text': title,
                     'Ano' : ano,
                     'Valor' : valor,
+                    'KM' : '',
                     'Concessionaria': storeName,
-                    'KM' : km,
                 }
-            else:
+            elif int(km) < 50000:
                 yield {
                     'Text': title,
                     'Ano' : ano,
                     'Valor' : valor,
+                    'KM' : km,
                     'Concessionaria': storeName,
                 }
 
@@ -139,8 +139,9 @@ class GfgCarsSpider(scrapy.Spider):
                 print(e)
         else:
             if temProximaLoja() is True:
-                global carIndex
-                print('novoIndex',carIndex)
-                self.parse()
-
-
+                try:
+                    carIndex = carIndex + 1
+                    carStore = carregarDadosLojaCarro()
+                    yield scrapy.Request(start_urls_global[carIndex], callback=self.parse)
+                except Exception as e:
+                    print(e)
