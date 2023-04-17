@@ -114,7 +114,7 @@ class GfgCarsSpider(scrapy.Spider):
                     'KM' : '',
                     'Concessionaria': storeName,
                 }
-            elif int(km) < 50000:
+            elif int(km) < 40000:
                 yield {
                     'Text': title,
                     'Ano' : ano,
